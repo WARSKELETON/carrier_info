@@ -16,6 +16,7 @@ import io.flutter.Log
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import java.util.concurrent.CompletableFuture
 
 
 internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : MethodCallHandler {
@@ -289,11 +290,15 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
     }
 
     // return cell id
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun cellId(telephonyManager: TelephonyManager, slotIndex: Int): HashMap<String, Any>? {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             // registeredCellInfo elements are ordered, simSlot 0 information will be in the index 0
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
+
+            registeredCellInfo.addAll(getCellInfoAsync(telephonyManager).get())
+
             for (cellInfo in telephonyManager.allCellInfo) {
                 if (cellInfo.isRegistered) {
                     registeredCellInfo.add(cellInfo)
@@ -327,6 +332,29 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
         }
 
         return null;
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun getCellInfoAsync(telephonyManager: TelephonyManager): CompletableFuture<MutableList<CellInfo>> {
+        val future = CompletableFuture<MutableList<CellInfo>>()
+
+        val callback = @RequiresApi(Build.VERSION_CODES.Q)
+        object : TelephonyManager.CellInfoCallback() {
+            override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
+                println("updated_cells_count: ${cellInfo.size}")
+                future.complete(cellInfo)
+            }
+
+            override fun onError(errorCode: Int, detail: Throwable?) {
+                super.onError(errorCode, detail)
+                println("updated_cells_error:\n")
+                detail?.printStackTrace()
+            }
+        }
+
+        telephonyManager.requestCellInfoUpdate(this.context!!.mainExecutor, callback)
+
+        return future
     }
 
 
