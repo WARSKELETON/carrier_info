@@ -290,19 +290,20 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
     }
 
     // return cell id
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun cellId(telephonyManager: TelephonyManager, slotIndex: Int): HashMap<String, Any>? {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             // registeredCellInfo elements are ordered, simSlot 0 information will be in the index 0
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
 
-//            registeredCellInfo.addAll(getCellInfoAsync(telephonyManager).get())
+            registeredCellInfo.addAll(getCellInfoAsync(telephonyManager).get())
 
-            for (cellInfo in telephonyManager.allCellInfo) {
-                if (cellInfo.isRegistered) {
-                    registeredCellInfo.add(cellInfo)
-                }
-            }
+//            for (cellInfo in telephonyManager.allCellInfo) {
+//                if (cellInfo.isRegistered) {
+//                    registeredCellInfo.add(cellInfo)
+//                }
+//            }
 
             var cid = -1;
             var lac = -1;
@@ -333,11 +334,11 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
         return null;
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     fun getCellInfoAsync(telephonyManager: TelephonyManager): CompletableFuture<MutableList<CellInfo>> {
         val future = CompletableFuture<MutableList<CellInfo>>()
 
-        val callback = @RequiresApi(Build.VERSION_CODES.Q)
-        object : TelephonyManager.CellInfoCallback() {
+        val callback = object : TelephonyManager.CellInfoCallback() {
             override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
                 println("updated_cells_count: ${cellInfo.size}")
                 future.complete(cellInfo)
