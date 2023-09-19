@@ -297,7 +297,7 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
             // registeredCellInfo elements are ordered, simSlot 0 information will be in the index 0
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
 
-            registeredCellInfo.addAll(getCellInfoAsync(telephonyManager).get())
+//            registeredCellInfo.addAll(getCellInfoAsync(telephonyManager).get())
 
             telephonyManager.requestCellInfoUpdate(this.context!!.mainExecutor,
                     object : TelephonyManager.CellInfoCallback() {
