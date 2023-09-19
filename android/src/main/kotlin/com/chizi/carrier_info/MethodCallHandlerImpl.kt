@@ -299,6 +299,20 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
             registeredCellInfo.addAll(getCellInfoAsync(telephonyManager).get())
 
+            telephonyManager.requestCellInfoUpdate(this.context!!.mainExecutor,
+                    object : TelephonyManager.CellInfoCallback() {
+                        override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
+                            println("updated_cells_count: ${cellInfo.size}")
+                            registeredCellInfo.addAll(cellInfo)
+                        }
+
+                        override fun onError(errorCode: Int, detail: Throwable?) {
+                            super.onError(errorCode, detail)
+                            println("updated_cells_error:\n")
+                            detail?.printStackTrace()
+                        }
+                    })
+
 //            for (cellInfo in telephonyManager.allCellInfo) {
 //                if (cellInfo.isRegistered) {
 //                    registeredCellInfo.add(cellInfo)
