@@ -32,6 +32,7 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
     private val E_NO_CELL_ID = "no_cell_id"
     private var mDefaultTelephonyManager: TelephonyManager? = null
     private lateinit var func: () -> Unit?
+    private val lastCellInfo: ArrayList<CellInfo> = ArrayList()
 
 
     fun setActivity(act: Activity?) {
@@ -290,45 +291,37 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
     }
 
     // return cell id
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun cellId(telephonyManager: TelephonyManager, slotIndex: Int): HashMap<String, Any>? {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             // registeredCellInfo elements are ordered, simSlot 0 information will be in the index 0
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
 
-//            getCellInfoAsync(telephonyManager, future)
-//
-//            registeredCellInfo.addAll(future.get())
-
-            val future = CompletableFuture<MutableList<CellInfo>>()
-
             val callback = object : TelephonyManager.CellInfoCallback() {
                 override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
                     println("updated_cells_count: ${cellInfo.size}")
-                    future.complete(cellInfo)
-                }
-
-                override fun onError(errorCode: Int, detail: Throwable?) {
-                    super.onError(errorCode, detail)
-                    future.completeExceptionally(detail ?: RuntimeException("CellInfo request failed"))
+                    lastCellInfo.clear()
+                    lastCellInfo.addAll(cellInfo)
                 }
             }
-
             telephonyManager.requestCellInfoUpdate(context!!.mainExecutor, callback)
 
-            registeredCellInfo.addAll(future.join())
-
-//            for (cellInfo in telephonyManager.allCellInfo) {
-//                if (cellInfo.isRegistered) {
-//                    registeredCellInfo.add(cellInfo)
-//                }
-//            }
+            for (cellInfo in telephonyManager.allCellInfo) {
+                if (cellInfo.isRegistered) {
+                    registeredCellInfo.add(cellInfo)
+                }
+            }
 
             var cid = -1;
             var lac = -1;
 
-            val currentCellInfo = registeredCellInfo[slotIndex]
+            var currentCellInfo = registeredCellInfo[slotIndex]
+
+            if (lastCellInfo.size > slotIndex && lastCellInfo[slotIndex].timestampMillis > currentCellInfo.timestampMillis) {
+                println("sacou")
+                currentCellInfo =  lastCellInfo[slotIndex]
+            }
 
             if (currentCellInfo is CellInfoGsm) {
                 val identityGsm = currentCellInfo.cellIdentity
