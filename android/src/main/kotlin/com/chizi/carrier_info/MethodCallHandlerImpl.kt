@@ -318,7 +318,7 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
             var currentCellInfo = registeredCellInfo[slotIndex]
 
-            if (lastCellInfo.size > slotIndex && lastCellInfo[slotIndex].timestampMillis > currentCellInfo.timestampMillis) {
+            if (lastCellInfo.size > slotIndex) {
                 println("sacou")
                 currentCellInfo =  lastCellInfo[slotIndex]
             }
