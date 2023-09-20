@@ -296,27 +296,28 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             // registeredCellInfo elements are ordered, simSlot 0 information will be in the index 0
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
-            val future = CompletableFuture<MutableList<CellInfo>>()
 
 //            getCellInfoAsync(telephonyManager, future)
 //
 //            registeredCellInfo.addAll(future.get())
 
-            runBlocking {
-                telephonyManager.requestCellInfoUpdate(context!!.mainExecutor,
-                        object : TelephonyManager.CellInfoCallback() {
-                            override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-                                println("updated_cells_count: ${cellInfo.size}")
-                                registeredCellInfo.addAll(cellInfo)
-                            }
+            val future = CompletableFuture<MutableList<CellInfo>>()
 
-                            override fun onError(errorCode: Int, detail: Throwable?) {
-                                super.onError(errorCode, detail)
-                                println("updated_cells_error:\n")
-                                detail?.printStackTrace()
-                            }
-                        })
+            val callback = object : TelephonyManager.CellInfoCallback() {
+                override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
+                    println("updated_cells_count: ${cellInfo.size}")
+                    future.complete(cellInfo)
+                }
+
+                override fun onError(errorCode: Int, detail: Throwable?) {
+                    super.onError(errorCode, detail)
+                    future.completeExceptionally(detail ?: RuntimeException("CellInfo request failed"))
+                }
             }
+
+            telephonyManager.requestCellInfoUpdate(context!!.mainExecutor, callback)
+
+            registeredCellInfo.addAll(future.join())
 
 //            for (cellInfo in telephonyManager.allCellInfo) {
 //                if (cellInfo.isRegistered) {
