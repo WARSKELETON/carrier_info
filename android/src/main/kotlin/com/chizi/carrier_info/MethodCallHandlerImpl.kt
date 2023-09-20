@@ -16,8 +16,8 @@ import io.flutter.Log
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
-
 
 internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : MethodCallHandler {
     private val TAG: String = "carrier_info"
@@ -298,23 +298,25 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
             val future = CompletableFuture<MutableList<CellInfo>>()
 
-            getCellInfoAsync(telephonyManager, future)
-
-            registeredCellInfo.addAll(future.get())
-
-//            telephonyManager.requestCellInfoUpdate(this.context!!.mainExecutor,
-//                    object : TelephonyManager.CellInfoCallback() {
-//                        override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-//                            println("updated_cells_count: ${cellInfo.size}")
-//                            registeredCellInfo.addAll(cellInfo)
-//                        }
+//            getCellInfoAsync(telephonyManager, future)
 //
-//                        override fun onError(errorCode: Int, detail: Throwable?) {
-//                            super.onError(errorCode, detail)
-//                            println("updated_cells_error:\n")
-//                            detail?.printStackTrace()
-//                        }
-//                    })
+//            registeredCellInfo.addAll(future.get())
+
+            runBlocking {
+                telephonyManager.requestCellInfoUpdate(context!!.mainExecutor,
+                        object : TelephonyManager.CellInfoCallback() {
+                            override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
+                                println("updated_cells_count: ${cellInfo.size}")
+                                registeredCellInfo.addAll(cellInfo)
+                            }
+
+                            override fun onError(errorCode: Int, detail: Throwable?) {
+                                super.onError(errorCode, detail)
+                                println("updated_cells_error:\n")
+                                detail?.printStackTrace()
+                            }
+                        })
+            }
 
 //            for (cellInfo in telephonyManager.allCellInfo) {
 //                if (cellInfo.isRegistered) {
