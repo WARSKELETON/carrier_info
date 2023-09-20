@@ -32,7 +32,7 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
     private val E_NO_CELL_ID = "no_cell_id"
     private var mDefaultTelephonyManager: TelephonyManager? = null
     private lateinit var func: () -> Unit?
-    private val lastCellInfo: ArrayList<CellInfo> = ArrayList()
+    private val lastCellInfo: HashMap<Int, CellInfo> = HashMap()
 
 
     fun setActivity(act: Activity?) {
@@ -300,9 +300,9 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
             val callback = object : TelephonyManager.CellInfoCallback() {
                 override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-                    println("updated_cells_count: ${cellInfo.size}")
-                    lastCellInfo.clear()
-                    lastCellInfo.addAll(cellInfo)
+                    if (!lastCellInfo.containsKey(slotIndex) || (lastCellInfo.containsKey(slotIndex) && cellInfo[slotIndex].timestampMillis > lastCellInfo[slotIndex]?.timestampMillis!!)) {
+                        lastCellInfo[slotIndex] = cellInfo[slotIndex]
+                    }
                 }
             }
             telephonyManager.requestCellInfoUpdate(context!!.mainExecutor, callback)
@@ -317,10 +317,8 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
             var lac = -1;
 
             var currentCellInfo = registeredCellInfo[slotIndex]
-
-            if (lastCellInfo.size > slotIndex) {
-                println("sacou")
-                currentCellInfo =  lastCellInfo[slotIndex]
+            if (lastCellInfo.containsKey(slotIndex) && lastCellInfo[slotIndex]?.timestampMillis!! > currentCellInfo.timestampMillis) {
+                currentCellInfo = lastCellInfo[slotIndex]!!
             }
 
             if (currentCellInfo is CellInfoGsm) {
