@@ -151,7 +151,7 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
                                     "carrierName" to telephonyManager.simOperatorName,
                                     "dataActivity" to telephonyManager.dataActivity,
                                     "radioType" to radioType(telephonyManager),
-                                    "cellId" to cellId(telephonyManager, subsInfo.simSlotIndex),
+                                    "cellId" to cellId(telephonyManager, subsInfo.simSlotIndex, subsInfo.subscriptionId),
                                     "simState" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) simState(
                                         telephonyManager
                                     ) else null,
@@ -293,20 +293,22 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
     // return cell id
     @RequiresApi(Build.VERSION_CODES.R)
-    private fun cellId(telephonyManager: TelephonyManager, slotIndex: Int): HashMap<String, Any>? {
+    private fun cellId(telephonyManager: TelephonyManager, slotIndex: Int, subId: Int): HashMap<String, Any>? {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             // registeredCellInfo elements are ordered, simSlot 0 information will be in the index 0
             val registeredCellInfo: ArrayList<CellInfo> = ArrayList()
 
             val callback = object : TelephonyManager.CellInfoCallback() {
+                private val subId: Int = subId
+
                 override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-                    if (cellInfo.size <= slotIndex) {
+                    if (cellInfo.isEmpty()) {
                         return;
                     }
 
-                    if (!lastCellInfo.containsKey(slotIndex) || (lastCellInfo.containsKey(slotIndex) && cellInfo[slotIndex].timestampMillis > lastCellInfo[slotIndex]?.timestampMillis!!)) {
-                        lastCellInfo[slotIndex] = cellInfo[slotIndex]
+                    if (!lastCellInfo.containsKey(this.subId) || (lastCellInfo.containsKey(this.subId) && cellInfo[0].timestampMillis > lastCellInfo[this.subId]?.timestampMillis!!)) {
+                        lastCellInfo[this.subId] = cellInfo[0]
                     }
                 }
             }
@@ -326,8 +328,8 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
             }
 
             var currentCellInfo = registeredCellInfo[slotIndex]
-            if (lastCellInfo.containsKey(slotIndex) && lastCellInfo[slotIndex]?.timestampMillis!! > currentCellInfo.timestampMillis) {
-                currentCellInfo = lastCellInfo[slotIndex]!!
+            if (lastCellInfo.containsKey(subId) && lastCellInfo[subId]?.timestampMillis!! > currentCellInfo.timestampMillis) {
+                currentCellInfo = lastCellInfo[subId]!!
             }
 
             if (currentCellInfo is CellInfoGsm) {
