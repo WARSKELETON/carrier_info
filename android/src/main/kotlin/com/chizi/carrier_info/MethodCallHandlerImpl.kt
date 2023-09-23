@@ -2,12 +2,14 @@ package com.chizi.carrier_info
 
 
 import android.Manifest
+import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.telephony.*
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -16,8 +18,7 @@ import io.flutter.Log
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.CompletableFuture
+
 
 internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : MethodCallHandler {
     private val TAG: String = "carrier_info"
@@ -315,6 +316,10 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
             var cid = -1;
             var lac = -1;
+
+            if (registeredCellInfo.size <= slotIndex) {
+                return null;
+            }
 
             var currentCellInfo = registeredCellInfo[slotIndex]
             if (lastCellInfo.containsKey(slotIndex) && lastCellInfo[slotIndex]?.timestampMillis!! > currentCellInfo.timestampMillis) {
