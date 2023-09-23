@@ -301,7 +301,11 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
             val callback = object : TelephonyManager.CellInfoCallback() {
                 override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-                    if (!lastCellInfo.containsKey(slotIndex) || (lastCellInfo.containsKey(slotIndex) && cellInfo.size > slotIndex && cellInfo[slotIndex].timestampMillis > lastCellInfo[slotIndex]?.timestampMillis!!)) {
+                    if (cellInfo.size <= slotIndex) {
+                        return;
+                    }
+
+                    if (!lastCellInfo.containsKey(slotIndex) || (lastCellInfo.containsKey(slotIndex) && cellInfo[slotIndex].timestampMillis > lastCellInfo[slotIndex]?.timestampMillis!!)) {
                         lastCellInfo[slotIndex] = cellInfo[slotIndex]
                     }
                 }
