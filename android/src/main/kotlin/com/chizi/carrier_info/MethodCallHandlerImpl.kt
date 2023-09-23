@@ -300,7 +300,7 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
 
             val callback = object : TelephonyManager.CellInfoCallback() {
                 override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-                    if (!lastCellInfo.containsKey(slotIndex) || (lastCellInfo.containsKey(slotIndex) && cellInfo[slotIndex].timestampMillis > lastCellInfo[slotIndex]?.timestampMillis!!)) {
+                    if (!lastCellInfo.containsKey(slotIndex) || (lastCellInfo.containsKey(slotIndex) && cellInfo.size > slotIndex && cellInfo[slotIndex].timestampMillis > lastCellInfo[slotIndex]?.timestampMillis!!)) {
                         lastCellInfo[slotIndex] = cellInfo[slotIndex]
                     }
                 }
@@ -343,24 +343,6 @@ internal class MethodCallHandlerImpl(context: Context, activity: Activity?) : Me
         }
 
         return null;
-    }
-
-    @RequiresApi(Build.VERSION_CODES.Q)
-    fun getCellInfoAsync(telephonyManager: TelephonyManager, future: CompletableFuture<MutableList<CellInfo>>) {
-        val callback = object : TelephonyManager.CellInfoCallback() {
-            override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
-                println("updated_cells_count: ${cellInfo.size}")
-                future.complete(cellInfo)
-            }
-
-            override fun onError(errorCode: Int, detail: Throwable?) {
-                super.onError(errorCode, detail)
-                println("updated_cells_error:\n")
-                detail?.printStackTrace()
-            }
-        }
-
-        telephonyManager.requestCellInfoUpdate(this.context!!.mainExecutor, callback)
     }
 
 
